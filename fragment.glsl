@@ -21,20 +21,20 @@ float distance(vec3 point) {
 }
 
 float raymarch(vec3 origin, vec3 ray, float len) {
+	const float inf = uintBitsToFloat(0x7f800000U);
+
 	float march = 0;
-	float amarch;
-	float minmarch = 1./0.; // +inf
+	float minmarch = inf;
 
 	for (;;) {
 		len += march;
 
 		march = distance(origin + ray*len);
 		minmarch = min(march, minmarch);
-		amarch = abs(march);
 
-		if (amarch < MIN_MARCH) {
+		if (abs(march) < MIN_MARCH) {
 			return 0.;
-		} else if (amarch > FAR_CLIP) {
+		} else if (len > FAR_CLIP) {
 			return minmarch;
 		}
 	}
@@ -50,10 +50,5 @@ void main() {
 	ray /= len;
 
 	float minmarch = raymarch(cam, ray, len);
-	if (minmarch == 0) {
-		color = fgcolor;
-	} else {
-		// Fancy antialiasing yay
-		color = mix(fgcolor, bgcolor, min(minmarch * 100, 1));
-	}
+	color = mix(fgcolor, bgcolor, min(minmarch * 100, 1));
 }

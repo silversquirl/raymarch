@@ -26,6 +26,7 @@ float raymarch(vec3 origin, vec3 ray, float len) {
 	float march = 0;
 	float minmarch = inf;
 
+	// TODO: unroll this loop a bit, should improve perf due to reduced branching
 	for (;;) {
 		len += march;
 

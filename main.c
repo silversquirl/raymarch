@@ -26,6 +26,9 @@ int main() {
 	if (!shader) panic("Shader compilation failed");
 	glUseProgram(shader);
 
+	glfwSwapInterval(0);
+	glfwSetTime(0);
+	int frames = 0;
 	while (!(glfwPollEvents(), glfwWindowShouldClose(win))) {
 		glEnableVertexAttribArray(0);
 
@@ -36,6 +39,14 @@ int main() {
 		glDisableVertexAttribArray(0);
 
 		glfwSwapBuffers(win);
+
+		frames++;
+		double time = glfwGetTime();
+		if (time >= 1) {
+			printf("%.3g ms/frame (%.1ffps)\n", time/frames, frames/time);
+			glfwSetTime(0);
+			frames = 0;
+		}
 	}
 
 	return 0;

@@ -14,9 +14,10 @@ float dist2sphere(vec3 point, vec3 center, float radius) {
 }
 
 float distance(vec3 point) {
-	// Unit sphere at origin
-	// Hardcoded 'cause I lazy
-	return dist2sphere(point, vec3(0, 0, 0), 1);
+	float d = dist2sphere(point, vec3(0, 0, 0), 1);
+	d = min(d, dist2sphere(point, vec3(1, 1, 1), 0.2));
+	d = min(d, dist2sphere(point, vec3(-1, 0, 14), 0.2));
+	return d;
 }
 
 float raymarch(vec3 origin, vec3 ray, float len) {

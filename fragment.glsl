@@ -2,6 +2,8 @@
 in vec2 coord;
 out vec3 color;
 
+uniform vec2 scale;
+
 const float MIN_MARCH = 1e-6;
 const float FAR_CLIP = 100;
 const float NORMAL_OFFSET = MIN_MARCH * 10;
@@ -80,7 +82,7 @@ float brightness(vec3 origin, vec3 ray, float len) {
 void main() {
 	vec3 cam = vec3(0, 0, 20);
 	float clip = 6;
-	vec3 clipcoord = vec3(coord, cam.z - clip);
+	vec3 clipcoord = vec3(scale * coord, cam.z - clip);
 
 	vec3 ray = clipcoord - cam;
 	float len = length(ray);

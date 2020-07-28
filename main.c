@@ -2,9 +2,34 @@
 #include "v.h"
 #include "vgl.h"
 
+struct state {
+	float scale[2];
+};
+
+static void resize_cb(GLFWwindow *win, int w, int h) {
+	struct state *state = glfwGetWindowUserPointer(win);
+
+	if (h > w) {
+		state->scale[0] = 1.0f;
+		state->scale[1] = (float)h / (float)w;
+	} else {
+		state->scale[0] = (float)w / (float)h;
+		state->scale[1] = 1.0f;
+	}
+
+	glViewport(0, 0, w, h);
+}
+
 int main() {
-	GLFWwindow *win = vgl_init(1024, 1024, "Ray Marcher");
+	int width = 1280, height = 1024;
+	GLFWwindow *win = vgl_init(width, height, "Ray Marcher", .resizable = 1);
 	if (!win) panic("Window creation failed");
+
+	struct state state;
+	glfwSetWindowUserPointer(win, &state);
+
+	resize_cb(win, width, height);
+	glfwSetFramebufferSizeCallback(win, resize_cb);
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -26,10 +51,14 @@ int main() {
 	if (!shader) panic("Shader compilation failed");
 	glUseProgram(shader);
 
+	GLuint u_scale = glGetUniformLocation(shader, "scale");
+
 	glfwSwapInterval(0);
 	glfwSetTime(0);
 	int frames = 0;
 	while (!(glfwPollEvents(), glfwWindowShouldClose(win))) {
+		glUniform2fv(u_scale, 1, state.scale);
+
 		glEnableVertexAttribArray(0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);

@@ -3,8 +3,10 @@ in vec2 coord;
 out vec3 color;
 
 uniform vec2 scale;
+uniform vec3 cam_pos;
+uniform vec4 cam_look;
 
-const float MIN_MARCH = 1e-6;
+const float MIN_MARCH = 1e-5;
 const float FAR_CLIP = 100;
 const float NORMAL_OFFSET = MIN_MARCH * 10;
 const float SHARPNESS = 5;
@@ -12,6 +14,28 @@ const float SHARPNESS = 5;
 const vec3 bgcolor = vec3(0, .01, .05);
 const vec3 fgcolor = vec3(.7, 0, .9);
 const vec3 shcolor = mix(bgcolor, fgcolor, .2);
+
+// Quaternions {{{
+// GLSL has w as the last component, rather than the first as in quats, so names are a bit confusing
+vec4 qinv(vec4 q) {
+	float fac = 1.0f / dot(q, q);
+	return q * vec4(fac, -fac, -fac, -fac);
+}
+
+vec4 qmul(vec4 a, vec4 b) {
+	vec2 pm = vec2(1, -1);
+	return vec4(
+		dot(a, b.xyzw * pm.xyyy),
+		dot(a, b.yxwz * pm.xxxy),
+		dot(a, b.zwxy * pm.xyxx),
+		dot(a, b.wzyx * pm.xxyx)
+	);
+}
+
+vec3 v3rot(vec3 v, vec4 q) {
+	return qmul(q, qmul(vec4(0, v), qinv(q))).yzw;
+}
+// }}}
 
 float dist2sphere(vec3 point, vec3 center, float radius) {
 	return distance(point, center) - radius;
@@ -65,8 +89,8 @@ vec3 normal(vec3 origin, vec3 ray, float len) {
 	return normalize(normal);
 }
 
-float light(vec3 light, vec3 normal, vec3 ray, float len) {
-	vec3 incident = ray*len - light;
+float light(vec3 light, vec3 normal, vec3 point, vec3 ray) {
+	vec3 incident = point - light;
 	vec3 reflection = reflect(incident, normal);
 	float bright = dot(reflection, ray);
 	bright /= 2*(1 + length(reflection));
@@ -75,25 +99,23 @@ float light(vec3 light, vec3 normal, vec3 ray, float len) {
 
 float brightness(vec3 origin, vec3 ray, float len) {
 	vec3 normal = normal(origin, ray, len);
-	float b = light(vec3(0, 10, -20), normal, ray, len);
+	float b = light(vec3(0, 10, -20), normal, origin + ray*len, ray);
 	return b;
 }
 
 void main() {
-	vec3 cam = vec3(0, 0, 20);
-	float clip = 6;
-	vec3 clipcoord = vec3(scale * coord, cam.z - clip);
-
-	vec3 ray = clipcoord - cam;
+	float clip = 3;
+	vec3 ray = vec3(scale * coord, -clip);
+	ray = v3rot(ray, cam_look);
 	float len = length(ray);
 	ray /= len;
 
-	raymarch(cam, ray, len);
+	raymarch(cam_pos, ray, len);
 	if (isinf(len)) {
 		color = bgcolor;
 		return;
 	}
 
-	float bright = brightness(cam, ray, len);
+	float bright = brightness(cam_pos, ray, len);
 	color = mix(shcolor, fgcolor, bright);
 }
